@@ -1,128 +1,26 @@
 import { useState, useEffect, useRef } from "react";
 import emailjs from "@emailjs/browser";
+import { T, GF } from "./theme";
+import { FALLBACK_PROPERTIES, fetchProperties } from "./data/properties";
+import PortfolioMapPage from "./PortfolioMapPage";
+import AdminLogin from "./AdminLogin";
+import AdminPortal from "./AdminPortal";
+import { supabase } from "./supabaseClient";
 
 // ─── EmailJS config — fill in your IDs from emailjs.com dashboard ───
 const EJS_SERVICE  = "service_na57ys5";   // e.g. "service_abc123"
 const EJS_TEMPLATE = "template_18inx6j";  // e.g. "template_xyz789"
 const EJS_PUBLIC   = "GQbjhdUhHgNi7qpf7";   // e.g. "aBcDeFgHiJkLm"
 import houstonImg from "./assets/houston.jpg";
-import portwest1 from "./assets/Portwest 6955.jpg";
-import portwest2 from "./assets/Portwest 6955 air.jpg";
-import idcAerial from "./assets/IDC aerial from SE.jpeg.jpg";
-import idcEntry from "./assets/IDC Entry.jpeg.jpg";
+import austinImg from "./assets/austin.webp";
+import dallasImg from "./assets/dallas.webp";
 import spaceCenterImg from "./assets/Billip Space Center2.jpg";
-import lockheedLogo from "./assets/lockheed.png";  
-
-// ─────────────────────────────────────────────
-//  THEME / DESIGN TOKENS
-// ─────────────────────────────────────────────
-const T = {
-  navy: "#0b2540", navyMid: "#163656", navyLight: "#1e4a73",
-  gold: "#c8a96e", goldLight: "#e2c99a",
-  offWhite: "#f7f5f1", warmGray: "#e8e4dc",
-  textDark: "#1a1a1a", textMuted: "#6b6b6b", textLight: "#9a9a9a",
-  border: "rgba(0,0,0,0.09)",
-};
-
-const GF = "@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600&family=DM+Sans:wght@300;400;500&display=swap');";
+import lockheedLogo from "./assets/lockheed.png";
+import skyhawkLogo from "./assets/skyhawk_white (002).png";
 
 // ─────────────────────────────────────────────
 //  DATA
 // ─────────────────────────────────────────────
-const PROPERTIES = [
-  {
-    id: "sam-houston",
-    badge: "Planned", badgeColor: "#edf2fb", badgeText: "#2c52a0",
-    type: ["office", "available"],
-    category: "Office · Planned Development",
-    name: "4477 W. Sam Houston Pkwy N",
-    address: "Houston, TX 77041",
-    specs: [{ label: "Total Size", value: "256,000 SF" }, { label: "Height", value: "10 stories" }, { label: "Delivery", value: "TBD" }],
-    featured: true,
-    description: "Planned 10-story Class A office building at the intersection of West Sam Houston Pkwy N and Beltway 8. Positioned for corporate headquarters or multi-tenant occupancy.",
-    features: ["Beltway 8 visibility", "Pre-lease available", "Structured parking", "LEED targeting"],
-    mapLat: 29.8301, mapLng: -95.5683,
-    price: "Pre-lease — contact for terms",
-    floorPlan: true,
-    photo: portwest2,
-  },
-  {
-    id: "lockheed",
-    badge: "Completed", badgeColor: "#f0f0f0", badgeText: "#888",
-    type: ["office", "industrial"],
-    category: "Office / Technology · Build-to-Suit",
-    name: "Lockheed Martin / Johnson Engineering",
-    address: "555 Forge River Rd, Houston, TX",
-    specs: [{ label: "Total Size", value: "108,600 SF" }, { label: "Type", value: "Build-to-suit" }],
-    featured: false,
-    description: "Office and technology build-to-suit delivered for Lockheed Martin and Johnson Engineering. Advanced tech and assembly space custom-designed for aerospace operations.",
-    features: ["Office + tech space", "Assembly areas", "Secure site design", "Build-to-suit (leased)"],
-    mapLat: 29.5518, mapLng: -95.1309,
-    price: null, floorPlan: false,
-    photo: idcAerial,
-  },
-  {
-    id: "office-depot",
-    badge: "Completed", badgeColor: "#f0f0f0", badgeText: "#888",
-    type: ["industrial"],
-    category: "Office / Warehouse · Build-to-Suit",
-    name: "Office Depot Distribution",
-    address: "6225 N by NW Blvd, Houston, TX",
-    specs: [{ label: "Total Size", value: "250,000 SF" }, { label: "Type", value: "Build-to-suit" }],
-    featured: false,
-    description: "Large-scale office and warehouse distribution center built to suit for Office Depot. One of the largest single-tenant industrial developments in the Billipp portfolio.",
-    features: ["Distribution layout", "Office component", "Dock-high loading", "NW Houston location"],
-    mapLat: 29.8744, mapLng: -95.5539,
-    price: null, floorPlan: false,
-    photo: portwest1,
-  },
-  {
-    id: "imperial-valley",
-    badge: "Available", badgeColor: "#e8f5ec", badgeText: "#2d7a45",
-    type: ["available"],
-    category: "Development Site · Available",
-    name: "Imperial Valley Development Site",
-    address: "Imperial Valley Dr & Lockhaven Dr, Houston, TX",
-    specs: [{ label: "Site Area", value: "4.95 acres" }, { label: "Pricing", value: "Contact us" }],
-    featured: false,
-    description: "Available development site at the SW corner of Imperial Valley Drive and Lockhaven Drive. Suitable for office, industrial, or build-to-suit development. Utilities on-site.",
-    features: ["Corner lot", "Utilities on-site", "BTS-ready", "Clear zoning"],
-    mapLat: 29.8516, mapLng: -95.3783,
-    price: "Contact for pricing",
-    floorPlan: false,
-    photo: idcEntry,
-  },
-  {
-    id: "forum",
-    badge: "Completed", badgeColor: "#f0f0f0", badgeText: "#888",
-    type: ["office"],
-    category: "Residential / Resort",
-    name: "The Forum at Memorial Woods",
-    address: "777 N. Post Oak Rd, Houston, TX",
-    specs: [{ label: "Total Size", value: "363,000 SF" }, { label: "Type", value: "High-rise" }],
-    featured: false,
-    description: "363,000 SF luxury high-rise retirement community — one of the flagship mixed-use projects in the Billipp portfolio. Delivered on time and on budget.",
-    features: ["High-rise design", "Full amenities", "Flagship project", "Memorial area"],
-    mapLat: 29.7602, mapLng: -95.4596,
-    price: null, floorPlan: false,
-    photo: spaceCenterImg,
-  },
-  {
-    id: "time-warner",
-    badge: "Completed", badgeColor: "#f0f0f0", badgeText: "#888",
-    type: ["office", "retail"],
-    category: "Broadcast / Office · Build-to-Suit",
-    name: "Time Warner News 24",
-    address: "11150 Equity Dr, Houston, TX",
-    specs: [{ label: "Total Size", value: "30,000 SF" }, { label: "Type", value: "Build-to-suit" }],
-    featured: false,
-    description: "30,000 SF television studio and office build-to-suit for Time Warner Cable's Houston news operation. Custom broadcast infrastructure integrated into the building design.",
-    features: ["Broadcast studio", "Office space", "Custom infrastructure", "NW Houston"],
-    mapLat: 29.8201, mapLng: -95.5401,
-    price: null, floorPlan: false,
-    photo: idcEntry,
-  },
-];
 
 const TEAM = [
   { initials: "JB", name: "Andrew Billipp", role: "Board Executive", bio: "Founder of J.A. Billipp Company with over 40 years developing and investing in Houston commercial real estate. Has led every major project in the firm's portfolio.", color: T.navy },
@@ -136,13 +34,13 @@ const TEAM = [
 
 ];
 
-const CLIENTS = [
+const FALLBACK_CLIENTS = [
   "Lockheed Martin", "Office Depot", "CooperVision", "McDonnell Douglas",
   "Rockwell Space Ops", "Time Warner", "Administaff / Insperity",
   "Hitachi Construction", "Sears Hardware", "BFI",
 ];
 
-const LOGOS = [
+const FALLBACK_LOGOS = [
   {
     name: "Lockheed Martin",
     abbr: "LM",
@@ -158,62 +56,56 @@ const LOGOS = [
 
 const SERVICES = [
   {
-    name: "Development",
-    desc: "Ground-up commercial and industrial development across office, retail, industrial, and residential asset classes.",
-    items: ["Office buildings", "Industrial / warehouse", "Retail centers", "Residential / resort"],
-    icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{width:40,height:40}}><rect x="3" y="3" width="18" height="18" rx="1"/><path d="M9 3v18M15 3v18M3 9h18M3 15h18"/></svg>,
+    name: "Development & Build-to-Suit",
+    desc: "Ground-up commercial and industrial development and custom build-to-suit facilities — designed around your requirements and delivered leased or purchased.",
+    items: ["Office buildings", "Industrial / warehouse", "Retail centers", "Residential / resort", "Leased (Billipp owns)", "Purchased (you own)", "Site selection included", "Turnkey delivery"],
+    icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{width:40,height:40}}><path d="M3 21h18M5 21V7l7-4 7 4v14"/><path d="M9 21v-6h6v6"/></svg>,
+    steps: [
+      { n:"01", title:"Discovery", desc:"We learn your space requirements, timeline, and whether lease or purchase fits your goals." },
+      { n:"02", title:"Site selection", desc:"We identify and evaluate sites that meet your operational and logistical needs." },
+      { n:"03", title:"Design & approval", desc:"Facility engineered to your specs — you review and approve before a shovel turns." },
+      { n:"04", title:"Construction", desc:"Billipp manages the build with trusted contractors. Regular updates, no vendor management on your end." },
+      { n:"05", title:"Delivery", desc:"Move in on time. Ongoing property management by Billipp with direct team access." },
+    ],
   },
   {
-    name: "Build-to-Suit",
-    desc: "Custom facilities designed and built around your operational requirements — available leased or purchased.",
-    items: ["Leased (Billipp owns)", "Purchased (you own)", "Site selection included", "Turnkey delivery"],
-    icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{width:40,height:40}}><path d="M3 21h18M5 21V7l7-4 7 4v14"/></svg>,
-  },
-  {
-    name: "Investment",
-    desc: "Strategic acquisition, joint venture, and partnership opportunities in commercial and industrial real estate.",
-    items: ["Acquisitions", "Joint ventures", "Partnerships", "Sale-leasebacks"],
+    name: "Investment & Sale-Leasebacks",
+    desc: "Strategic acquisitions, joint ventures, and sale-leaseback transactions — we deploy our own capital and manage every asset as owners.",
+    items: ["Acquisitions", "Joint ventures", "Partnerships", "Sale-leasebacks", "Immediate liquidity", "No relocation required", "Flexible lease terms", "Close in 60–90 days"],
     icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{width:40,height:40}}><path d="M3 3v18h18"/><path d="M7 16l4-4 4 4 4-6"/></svg>,
+    steps: [
+      { n:"01", title:"Initial discussion", desc:"Share the opportunity — acquisition, JV structure, or sale-leaseback. We respond within 48 hours." },
+      { n:"02", title:"Underwriting", desc:"We analyze the deal with our own capital and expertise — no lengthy approval committees." },
+      { n:"03", title:"Letter of intent", desc:"If the deal works, we move to LOI quickly. Our 40-year track record means lenders and partners know us." },
+      { n:"04", title:"Due diligence", desc:"Thorough but efficient. We know what to look for in commercial and industrial assets." },
+      { n:"05", title:"Close & manage", desc:"We close and operate the asset as owners — aligned with every partner in the deal." },
+    ],
   },
   {
-    name: "Sale-Leasebacks",
-    desc: "Sell your property to Billipp and remain as a long-term tenant — unlocking capital without relocating.",
-    items: ["Immediate liquidity", "No relocation required", "Flexible lease terms", "Close in 60–90 days"],
-    icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{width:40,height:40}}><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>,
+    name: "Property Management",
+    desc: "Full-service, in-house property management for commercial and industrial assets — handled directly by ownership, not outsourced.",
+    items: ["Lease administration", "Preventive maintenance", "Tenant relations", "Financial reporting", "Vendor management", "Capital improvements", "24/7 emergency response", "Annual property review"],
+    icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{width:40,height:40}}><rect x="3" y="3" width="18" height="18" rx="1"/><path d="M9 3v18M3 9h6M3 15h6"/><path d="M12 8h6M12 12h6M12 16h6"/></svg>,
+    steps: [
+      { n:"01", title:"Onboarding", desc:"We review leases, contracts, and property condition to establish a management baseline." },
+      { n:"02", title:"Tenant coordination", desc:"Direct point of contact for all tenants — fast response, no middlemen or call centers." },
+      { n:"03", title:"Maintenance", desc:"In-house capabilities handle day-to-day repairs, preventive schedules, and capital projects." },
+      { n:"04", title:"Reporting", desc:"Monthly financial statements and property performance reports delivered on time, every time." },
+    ],
+  },
+  {
+    name: "Agency & Brokerage",
+    desc: "Tenant representation, landlord representation, and investment sales — backed by 40+ years of Houston market relationships and deep local knowledge.",
+    items: ["Tenant representation", "Landlord representation", "Buyer representation", "Investment sales", "Market analysis", "Site selection advisory", "Lease negotiation", "Disposition strategy"],
+    icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{width:40,height:40}}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
+    steps: [
+      { n:"01", title:"Market analysis", desc:"We assess the market, identify options, and define the opportunity against your objectives." },
+      { n:"02", title:"Sourcing", desc:"Active outreach using 40+ years of Houston relationships to find the right space or tenant." },
+      { n:"03", title:"Negotiation", desc:"We negotiate terms on your behalf — lease, purchase, or sale — with full market context." },
+      { n:"04", title:"Closing support", desc:"We guide the transaction through due diligence, documentation, and a clean close." },
+    ],
   },
 ];
-
-const PROCESS_TABS = {
-  bts: {
-    label: "Build-to-suit",
-    steps: [
-      { n: "01", title: "Discovery call", desc: "We learn your space requirements, timeline, preferred location, and whether lease or purchase fits your goals." },
-      { n: "02", title: "Site selection", desc: "We identify and evaluate sites in Houston that meet your operational and logistical needs." },
-      { n: "03", title: "Design & approval", desc: "Architect and engineer the facility around your specs. You review and approve before a shovel turns." },
-      { n: "04", title: "Construction", desc: "Billipp manages the build with trusted contractors. Regular updates without managing vendors." },
-      { n: "05", title: "Delivery", desc: "Move in on time. Ongoing property management by Billipp with direct access to the team." },
-    ],
-  },
-  invest: {
-    label: "Investment",
-    steps: [
-      { n: "01", title: "Initial discussion", desc: "Share the opportunity — acquisition target, JV structure, or partnership concept. We respond within 48 hours." },
-      { n: "02", title: "Underwriting", desc: "We analyze the deal with our own capital and expertise — no lengthy approval committees." },
-      { n: "03", title: "Letter of intent", desc: "If the deal works, we move to LOI quickly. Our 40-year track record means lenders and partners know us." },
-      { n: "04", title: "Due diligence", desc: "Thorough but efficient. We know what to look for in Houston commercial and industrial assets." },
-      { n: "05", title: "Close & manage", desc: "We close and operate the asset as owners — aligned with every partner in the deal." },
-    ],
-  },
-  leaseback: {
-    label: "Sale-leaseback",
-    steps: [
-      { n: "01", title: "You own a property", desc: "Your business owns the building it operates in — and you want to free up that capital for growth." },
-      { n: "02", title: "Billipp buys it", desc: "We purchase the property at fair market value, providing immediate liquidity to your business." },
-      { n: "03", title: "You stay in place", desc: "Simultaneously, you sign a long-term lease — your operations never skip a beat." },
-      { n: "04", title: "Capital deployed", desc: "Cash from the sale goes into your business — new equipment, expansion, acquisitions, or debt reduction." },
-    ],
-  },
-};
 
 // ─────────────────────────────────────────────
 //  SHARED COMPONENTS
@@ -281,19 +173,28 @@ function BtnSm({ children, onClick, variant="navy", style }) {
 // ─────────────────────────────────────────────
 //  LOGO CAROUSEL
 // ─────────────────────────────────────────────
-function LogoCarousel() {
-  const doubled = [...LOGOS, ...LOGOS]; // seamless loop
+function LogoCarousel({ logos }) {
+  const list = logos && logos.length ? logos : FALLBACK_LOGOS;
+  const doubled = [...list, ...list]; // seamless loop
   return (
-    <div style={{ background:T.navy, borderTop:`1px solid rgba(200,169,110,0.2)`, borderBottom:`1px solid rgba(200,169,110,0.2)`, padding:"28px 0", overflow:"hidden" }}>
+    <div style={{ background:T.navy, borderTop:`1px solid rgba(200,169,110,0.2)`, borderBottom:`1px solid rgba(200,169,110,0.2)` }}>
+      <div style={{ textAlign:"center", padding:"14px 1.5rem 10px" }}>
+        <p style={{ fontSize:11, color:"rgba(255,255,255,0.45)", letterSpacing:"0.14em", textTransform:"uppercase" }}>
+          Billipp Company is trusted by staff and professionals at ...
+        </p>
+      </div>
+      <div style={{ padding:"20px 0", overflow:"hidden" }}>
       <div style={{ display:"flex", width:"max-content", animation:"marquee 28s linear infinite" }}>
         {doubled.map((l, i) => (
-          <div key={i} style={{ display:"flex", alignItems:"center", gap:14, padding:"0 44px", borderRight:`1px solid rgba(200,169,110,0.15)`, flexShrink:0 }}>
-            <div style={{ width:48, height:48, borderRadius:8, background:"rgba(200,169,110,0.12)", border:`1px solid rgba(200,169,110,0.35)`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:13, fontWeight:700, color:T.gold, letterSpacing:"0.06em", flexShrink:0 }}>
-              {l.icon || l.abbr}
+          <div key={i} style={{ display:"flex", alignItems:"center", padding:"0 60px", borderRight:`1px solid rgba(200,169,110,0.15)`, flexShrink:0 }}>
+            <div style={{ width:160, height:80, borderRadius:8, background:"rgba(200,169,110,0.08)", border:`1px solid rgba(200,169,110,0.25)`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:16, fontWeight:700, color:T.gold, letterSpacing:"0.08em", overflow:"hidden", padding:"0 12px" }}>
+              {l.logo_url
+                ? <img src={l.logo_url} alt={l.name} style={{ maxWidth:"100%", maxHeight:60, objectFit:"contain" }} />
+                : l.icon || l.abbr}
             </div>
-            <span style={{ fontSize:14, color:"rgba(255,255,255,0.75)", fontWeight:400, whiteSpace:"nowrap", letterSpacing:"0.02em" }}>{l.name}</span>
           </div>
         ))}
+      </div>
       </div>
     </div>
   );
@@ -311,9 +212,9 @@ function Nav({ page, setPage }) {
   }, []);
 
   const links = [
-    { label:"Services", anchor:"services" }, { label:"Portfolio", anchor:"portfolio" },
-    { label:"About", anchor:"about" }, { label:"Directory", id:"directory" },
     
+    { label:"About", anchor:"about" }, { label:"Services", anchor:"services" },{ label:"Directory", id:"directory" },
+    { label:"Property Portfolio", id:"portfolio-map" },
   ];
 
   function handleNav(link) {
@@ -326,10 +227,14 @@ function Nav({ page, setPage }) {
 
   return (
     <nav style={{ position:"fixed", top:0, left:0, right:0, zIndex:200, height:64, background: scrolled?"rgba(11,37,64,0.97)":"rgba(11,37,64,0.97)", backdropFilter:"blur(8px)", display:"flex", alignItems:"center", justifyContent:"space-between", padding:"0 1.5rem", borderBottom:`1px solid rgba(200,169,110,0.2)`, transition:"background 0.3s" }}>
-      <button onClick={()=>{setPage("home");window.scrollTo(0,0)}} style={{ background:"none", border:"none", cursor:"pointer", textAlign:"left", padding:0 }}>
-        <div style={{ fontFamily:"'Playfair Display',serif", fontSize:17, color:T.goldLight, letterSpacing:"0.02em" }}>Billipp</div>
-        <div style={{ color:"rgba(255,255,255,0.45)", fontSize:11, fontWeight:300, letterSpacing:"0.12em", textTransform:"uppercase", marginTop:-2 }}>Company</div>
-      </button>
+      <div style={{ display:"flex", alignItems:"center", gap:16 }}>
+        <button onClick={()=>{setPage("home");window.scrollTo(0,0)}} style={{ background:"none", border:"none", cursor:"pointer", textAlign:"left", padding:0 }}>
+          <div style={{ fontFamily:"'Playfair Display',serif", fontSize:24, color:T.goldLight, letterSpacing:"0.02em" }}>Billipp</div>
+          <div style={{ color:"rgba(255,255,255,0.45)", fontSize:18, fontWeight:300, letterSpacing:"0.12em", textTransform:"uppercase", marginTop:-2 }}>Company</div>
+        </button>
+        <div style={{ width:1, height:36, background:"rgba(200,169,110,0.2)" }} />
+        <img src={skyhawkLogo} alt="Skyhawk Partners" style={{ height:30, width:"auto", objectFit:"contain", opacity:0.8 }} />
+      </div>
       <div style={{ display:"flex", gap:"2.5rem", alignItems:"center" }}>
         {links.map(l => (
           <button key={l.label} onClick={()=>handleNav(l)} style={{ background:"none", border:"none", color:"rgba(255,255,255,0.7)", fontSize:13, letterSpacing:"0.06em", cursor:"pointer", padding:0, transition:"color 0.2s" }}
@@ -364,10 +269,10 @@ function Hero({ setPage }) {
         Houston, Texas · Est. 1980
       </div>
       <h1 className="fade-up fade2" style={{ fontFamily:"'Playfair Display',serif", fontSize:"clamp(38px,5vw,66px)", fontWeight:500, color:"#fff", lineHeight:1.12, maxWidth:720, marginBottom:"1.75rem" }}>
-        Commercial & industrial<br/>real estate. <span style={{ color:T.goldLight, fontStyle:"normal" }}>Built to endure.</span>
+        Commercial & Industrial<br/>Real Estate. <span style={{ color:T.goldLight, fontStyle:"normal" }}>Built to Endure.</span>
       </h1>
       <p className="fade-up fade3" style={{ color:"rgba(255,255,255,0.55)", fontSize:16, fontWeight:300, maxWidth:480, lineHeight:1.7, marginBottom:"2.5rem" }}>
-        Development, build-to-suit, and strategic investment across Greater Houston — managed by an owner, not a manager.
+        Development, build-to-suit, and strategic investment across  Texas - Nationwide Relations.
       </p>
       <div className="fade-up fade4" style={{ display:"flex", gap:12, flexWrap:"wrap" }}>
         <BtnPrimary onClick={()=>document.getElementById("portfolio")?.scrollIntoView({behavior:"smooth"})}>View portfolio</BtnPrimary>
@@ -377,7 +282,7 @@ function Hero({ setPage }) {
 
       {/* Stats */}
       <div style={{ position:"absolute", right:"3rem", bottom:"5rem", display:"flex", flexDirection:"column", gap:24, zIndex:1 }}>
-        {[["40+","Years active"],["3M+","Sq. ft. developed"],["32+","Completed projects"]].map(([n,l])=>(
+        {[["45+","Years in business"]].map(([n,l])=>(
           <div key={l} style={{ textAlign:"right", borderRight:`2px solid ${T.gold}`, paddingRight:16 }}>
             <div style={{ fontFamily:"'Playfair Display',serif", fontSize:32, color:"#fff" }}>{n}</div>
             <div style={{ fontSize:11, color:"rgba(255,255,255,0.45)", letterSpacing:"0.1em", textTransform:"uppercase" }}>{l}</div>
@@ -389,30 +294,83 @@ function Hero({ setPage }) {
 }
 
 // ─────────────────────────────────────────────
-//  SERVICES
+//  SERVICES  (combined disciplines + how we work)
 // ─────────────────────────────────────────────
 function Services() {
-  const [hov, setHov] = useState(null);
+  const [activeIdx, setActiveIdx] = useState(0);
+  const s = SERVICES[activeIdx];
   return (
     <section id="services" style={{ background:T.navy, padding:"6rem 1.5rem" }}>
       <SectionTag>What we do</SectionTag>
       <SectionTitle light>Four disciplines.<br/>One firm.</SectionTitle>
-      <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(220px,1fr))", gap:1, background:"rgba(200,169,110,0.15)", border:"1px solid rgba(200,169,110,0.15)", borderRadius:8, overflow:"hidden", marginTop:"3rem" }}>
-        {SERVICES.map((s,i) => (
-          <div key={s.name} onMouseEnter={()=>setHov(i)} onMouseLeave={()=>setHov(null)}
-            style={{ background: hov===i?T.navyLight:T.navyMid, padding:"2rem 1.75rem", transition:"background 0.2s" }}>
-            <div style={{ color:T.gold, marginBottom:"1.25rem" }}>{s.icon}</div>
-            <p style={{ fontFamily:"'Playfair Display',serif", fontSize:18, color:"#fff", marginBottom:"0.6rem" }}>{s.name}</p>
-            <p style={{ fontSize:13, color:"rgba(255,255,255,0.45)", lineHeight:1.7, fontWeight:300 }}>{s.desc}</p>
-            <ul style={{ listStyle:"none", marginTop:"1rem" }}>
-              {s.items.map(item=>(
-                <li key={item} style={{ fontSize:12, color:"rgba(255,255,255,0.4)", padding:"3px 0", display:"flex", alignItems:"center", gap:6 }}>
-                  <span style={{ color:T.gold, fontSize:10 }}>—</span>{item}
-                </li>
-              ))}
-            </ul>
+      <p style={{ color:"rgba(255,255,255,0.45)", fontSize:15, lineHeight:1.75, maxWidth:560, marginBottom:"3rem", fontWeight:300 }}>
+        From ground-up development to full-service brokerage — every capability is managed in-house by an owner-operated team.
+      </p>
+
+      {/* Tab layout */}
+      <div style={{ display:"flex", border:"1px solid rgba(200,169,110,0.18)", borderRadius:10, overflow:"hidden", minHeight:460 }}>
+
+        {/* LEFT — tab list 30% */}
+        <div style={{ width:"30%", flexShrink:0, background:T.navyMid, borderRight:"1px solid rgba(200,169,110,0.18)", display:"flex", flexDirection:"column" }}>
+          {SERVICES.map((tab, i) => {
+            const active = activeIdx === i;
+            return (
+              <button key={tab.name} onClick={()=>setActiveIdx(i)}
+                style={{ background: active ? T.navyLight : "transparent", border:"none", borderLeft: active ? `3px solid ${T.gold}` : "3px solid transparent", borderBottom:"1px solid rgba(200,169,110,0.1)", padding:"1.5rem 1.5rem 1.5rem 1.25rem", textAlign:"left", cursor:"pointer", transition:"all 0.2s", display:"flex", alignItems:"center", gap:14, flex:1 }}>
+                <div style={{ color: active ? T.gold : "rgba(200,169,110,0.45)", flexShrink:0, transition:"color 0.2s" }}>{tab.icon}</div>
+                <div>
+                  <p style={{ fontFamily:"'Playfair Display',serif", fontSize:15, color: active ? "#fff" : "rgba(255,255,255,0.55)", fontWeight:500, lineHeight:1.3, marginBottom:3, transition:"color 0.2s" }}>{tab.name}</p>
+                  <p style={{ fontSize:11, color: active ? "rgba(255,255,255,0.45)" : "rgba(255,255,255,0.25)", lineHeight:1.4 }}>{tab.items.slice(0,2).join(" · ")}</p>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* RIGHT — content panel 70% */}
+        <div style={{ flex:1, background:T.navyLight, padding:"2.5rem 2.5rem 2rem", overflow:"auto", display:"flex", flexDirection:"column", gap:"2rem" }}>
+
+          {/* Header */}
+          <div>
+            <div style={{ display:"flex", alignItems:"center", gap:14, marginBottom:"1rem" }}>
+              <div style={{ color:T.gold }}>{s.icon}</div>
+              <h3 style={{ fontFamily:"'Playfair Display',serif", fontSize:24, color:"#fff", fontWeight:500 }}>{s.name}</h3>
+            </div>
+            <p style={{ fontSize:14, color:"rgba(255,255,255,0.6)", lineHeight:1.8, fontWeight:300, maxWidth:600 }}>{s.desc}</p>
           </div>
-        ))}
+
+          {/* Capabilities grid */}
+          <div>
+            <p style={{ fontSize:11, letterSpacing:"0.14em", textTransform:"uppercase", color:T.gold, marginBottom:"0.875rem" }}>Capabilities</p>
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(190px,1fr))", gap:8 }}>
+              {s.items.map(item => (
+                <div key={item} style={{ display:"flex", alignItems:"center", gap:8, background:"rgba(255,255,255,0.05)", border:"1px solid rgba(200,169,110,0.12)", borderRadius:5, padding:"0.6rem 0.875rem" }}>
+                  <span style={{ color:T.gold, fontSize:9, flexShrink:0 }}>◆</span>
+                  <span style={{ fontSize:12, color:"rgba(255,255,255,0.75)", lineHeight:1.4 }}>{item}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* How it works steps */}
+          <div>
+            <p style={{ fontSize:11, letterSpacing:"0.14em", textTransform:"uppercase", color:T.gold, marginBottom:"0.875rem" }}>How it works</p>
+            <div style={{ display:"flex", gap:0, flexWrap:"wrap", alignItems:"center" }}>
+              {s.steps.map((st, j) => (
+                <div key={st.n} style={{ display:"flex", alignItems:"center", gap:8 }}>
+                  <div style={{ display:"flex", alignItems:"center", gap:8, padding:"0.5rem 0.75rem", background:"rgba(255,255,255,0.05)", border:"1px solid rgba(200,169,110,0.12)", borderRadius:5 }}>
+                    <span style={{ fontFamily:"'Playfair Display',serif", fontSize:13, color:"rgba(200,169,110,0.5)", fontWeight:500 }}>{st.n}</span>
+                    <span style={{ fontSize:13, fontWeight:500, color:"rgba(255,255,255,0.85)" }}>{st.title}</span>
+                  </div>
+                  {j < s.steps.length - 1 && (
+                    <span style={{ color:T.gold, fontSize:13, opacity:0.4, flexShrink:0 }}>→</span>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+        </div>
       </div>
     </section>
   );
@@ -433,9 +391,8 @@ function PortfolioCard({ p, setDetailProp }) {
         {p.photo ? (
           <img src={p.photo} alt={p.name} style={{ width:"100%", height:"100%", objectFit:"cover", display:"block", transition:"transform 0.4s ease", transform: hov?"scale(1.04)":"scale(1)" }} />
         ) : (
-          <div style={{ width:"100%", height:"100%", display:"flex", alignItems:"center", justifyContent:"center", flexDirection:"column", gap:8 }}>
-            <svg style={{ width:48, height:48, color:"rgba(11,37,64,0.18)" }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1"><rect x="3" y="3" width="18" height="18" rx="1"/><path d="M9 3v18M15 3v18M3 9h18M3 15h18"/></svg>
-            <span style={{ fontSize:11, color:"rgba(11,37,64,0.28)", letterSpacing:"0.1em", textTransform:"uppercase" }}>Property photo</span>
+          <div style={{ width:"100%", height:"100%", display:"flex", alignItems:"center", justifyContent:"center", background:T.navy }}>
+            <img src={skyhawkLogo} alt="Skyhawk Partners" style={{ width:"40%", maxWidth:120, objectFit:"contain", opacity:0.35 }} />
           </div>
         )}
       </div>
@@ -454,17 +411,21 @@ function PortfolioCard({ p, setDetailProp }) {
   );
 }
 
-function Portfolio({ setDetailProp }) {
+function Portfolio({ setDetailProp, properties }) {
   const [filter, setFilter] = useState("all");
   const filters = ["all","office","industrial","retail","available"];
-  const visible = PROPERTIES.filter(p => filter==="all" || p.type.includes(filter));
+  const visible = properties.filter(p =>
+    filter === "all" ||
+    p.type.includes(filter) ||
+    (filter === "available" && p.badge?.toLowerCase() === "available")
+  );
 
   return (
     <section id="portfolio" style={{ background:T.offWhite, padding:"6rem 1.5rem" }}>
       <SectionTag>Portfolio</SectionTag>
       <SectionTitle>32 completed projects.<br/>One Houston market.</SectionTitle>
       <p style={{ color:T.textMuted, fontSize:15, lineHeight:1.75, maxWidth:560, marginBottom:"2.5rem", fontWeight:300 }}>
-        A selective track record built over four decades for tenants including Lockheed Martin, Office Depot, and CooperVision.
+        A selective track record built over four decades for tenants.
       </p>
       <div style={{ display:"flex", gap:8, flexWrap:"wrap", marginBottom:"2.5rem" }}>
         {filters.map(f=>(
@@ -488,27 +449,142 @@ function Portfolio({ setDetailProp }) {
 // ─────────────────────────────────────────────
 //  PROPERTY DETAIL PAGE
 // ─────────────────────────────────────────────
-function MapEmbed({ lat, lng, name }) {
-  const mapRef = useRef(null);
-  // Use OpenStreetMap iframe embed (no API key needed)
-  const bbox = `${lng-0.02},${lat-0.015},${lng+0.02},${lat+0.015}`;
-  const src = `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${lat},${lng}`;
+// Geocode an address string → { lat, lng } using Nominatim (free, no key needed).
+async function geocodeAddress(address) {
+  const q = encodeURIComponent(address);
+  const res = await fetch(
+    `https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=1`,
+    { headers: { "Accept-Language": "en", "User-Agent": "BillippCompanyWebsite/1.0" } }
+  );
+  const data = await res.json();
+  if (data && data[0]) return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
+  return null;
+}
+
+function MapEmbed({ lat, lng, address, name }) {
+  const [coords, setCoords] = useState(
+    lat && lng && lat !== 29.75 && lng !== -95.37   // non-default values stored
+      ? { lat, lng }
+      : null
+  );
+  const [geocoding, setGeocoding] = useState(false);
+  const [geoError, setGeoError]   = useState(false);
+
+  useEffect(() => {
+    // Already have real coords — no need to geocode
+    if (coords) return;
+    if (!address) { setGeoError(true); return; }
+    setGeocoding(true);
+    geocodeAddress(address)
+      .then(result => {
+        if (result) setCoords(result);
+        else setGeoError(true);
+      })
+      .catch(() => setGeoError(true))
+      .finally(() => setGeocoding(false));
+  }, [address]);
+
+  if (geocoding) return (
+    <div style={{ height: 320, borderRadius: 8, border: `1px solid ${T.border}`, background: T.warmGray, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 10 }}>
+      <div style={{ width: 32, height: 32, borderRadius: "50%", border: `3px solid ${T.border}`, borderTopColor: T.navy, animation: "spin 0.8s linear infinite" }} />
+      <p style={{ fontSize: 13, color: T.textMuted }}>Locating address…</p>
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+    </div>
+  );
+
+  if (geoError || !coords) return (
+    <div style={{ height: 180, borderRadius: 8, border: `1px dashed ${T.border}`, background: T.offWhite, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 8 }}>
+      <svg viewBox="0 0 24 24" fill="none" stroke={T.textMuted} strokeWidth="1.5" width={28} height={28}><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
+      <p style={{ fontSize: 13, color: T.textMuted }}>Map unavailable — address could not be located</p>
+      {address && (
+        <a href={`https://www.google.com/maps/search/${encodeURIComponent(address)}`} target="_blank" rel="noopener noreferrer"
+          style={{ fontSize: 12, color: T.navy, textDecoration: "none", borderBottom: `1px solid ${T.border}` }}>
+          Search on Google Maps ↗
+        </a>
+      )}
+    </div>
+  );
+
+  const { lat: clat, lng: clng } = coords;
+  const bbox = `${clng-0.018},${clat-0.013},${clng+0.018},${clat+0.013}`;
+  const src  = `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${clat},${clng}`;
+
   return (
-    <div style={{ borderRadius:8, overflow:"hidden", border:`1px solid ${T.border}`, position:"relative" }}>
-      <iframe title={`Map for ${name}`} src={src} width="100%" height="320" style={{ border:"none", display:"block" }} loading="lazy" />
-      <div style={{ position:"absolute", top:10, right:10 }}>
-        <a href={`https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}#map=15/${lat}/${lng}`} target="_blank" rel="noopener noreferrer"
-          style={{ background:T.navy, color:T.goldLight, fontSize:11, padding:"5px 10px", borderRadius:4, textDecoration:"none", letterSpacing:"0.06em" }}>
-          Open map ↗
+    <div style={{ borderRadius: 8, overflow: "hidden", border: `1px solid ${T.border}`, position: "relative" }}>
+      <iframe title={`Map for ${name}`} src={src} width="100%" height="320" style={{ border: "none", display: "block" }} loading="lazy" />
+      <div style={{ position: "absolute", top: 10, right: 10, display: "flex", gap: 6 }}>
+        <a href={`https://www.google.com/maps/search/${encodeURIComponent(address || name)}`} target="_blank" rel="noopener noreferrer"
+          style={{ background: T.navy, color: T.goldLight, fontSize: 11, padding: "5px 10px", borderRadius: 4, textDecoration: "none", letterSpacing: "0.06em" }}>
+          Google Maps ↗
+        </a>
+        <a href={`https://www.openstreetmap.org/?mlat=${clat}&mlon=${clng}#map=16/${clat}/${clng}`} target="_blank" rel="noopener noreferrer"
+          style={{ background: "rgba(255,255,255,0.85)", color: T.navy, fontSize: 11, padding: "5px 10px", borderRadius: 4, textDecoration: "none", letterSpacing: "0.06em" }}>
+          OSM ↗
         </a>
       </div>
     </div>
   );
 }
 
+function PhotoGallery({ files }) {
+  const images = (files || []).filter(f => f.type === "image");
+  const [lightbox, setLightbox] = useState(null); // index
+
+  if (!images.length) return <p style={{ color: T.textMuted, fontSize: 14 }}>No photos uploaded.</p>;
+
+  return (
+    <>
+      {/* Grid */}
+      <div style={{ columns: "3 200px", gap: 12 }}>
+        {images.map((img, i) => (
+          <div key={img.url}
+            onClick={() => setLightbox(i)}
+            style={{ breakInside: "avoid", marginBottom: 12, borderRadius: 6, overflow: "hidden", cursor: "zoom-in", border: `1px solid ${T.border}`, position: "relative" }}>
+            <img src={img.url} alt={img.name}
+              style={{ width: "100%", display: "block", transition: "transform 0.3s" }}
+              onMouseEnter={e => e.currentTarget.style.transform = "scale(1.02)"}
+              onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"} />
+            {i === 0 && (
+              <span style={{ position: "absolute", top: 8, left: 8, background: "rgba(200,169,110,0.9)", color: T.navy, fontSize: 9, fontWeight: 700, padding: "2px 7px", borderRadius: 3, letterSpacing: "0.06em" }}>HERO</span>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* Lightbox */}
+      {lightbox !== null && (
+        <div onClick={() => setLightbox(null)}
+          style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.92)", zIndex: 500, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          {/* Prev */}
+          <button onClick={e => { e.stopPropagation(); setLightbox((lightbox - 1 + images.length) % images.length); }}
+            style={{ position: "absolute", left: 20, top: "50%", transform: "translateY(-50%)", background: "rgba(255,255,255,0.1)", border: "none", color: "#fff", fontSize: 28, width: 48, height: 48, borderRadius: "50%", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>‹</button>
+          {/* Image */}
+          <div onClick={e => e.stopPropagation()} style={{ maxWidth: "88vw", maxHeight: "88vh", display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
+            <img src={images[lightbox].url} alt={images[lightbox].name}
+              style={{ maxWidth: "100%", maxHeight: "80vh", objectFit: "contain", borderRadius: 6, boxShadow: "0 24px 80px rgba(0,0,0,0.6)" }} />
+            <p style={{ color: "rgba(255,255,255,0.5)", fontSize: 12 }}>{lightbox + 1} / {images.length} — {images[lightbox].name}</p>
+          </div>
+          {/* Next */}
+          <button onClick={e => { e.stopPropagation(); setLightbox((lightbox + 1) % images.length); }}
+            style={{ position: "absolute", right: 20, top: "50%", transform: "translateY(-50%)", background: "rgba(255,255,255,0.1)", border: "none", color: "#fff", fontSize: 28, width: 48, height: 48, borderRadius: "50%", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>›</button>
+          {/* Close */}
+          <button onClick={() => setLightbox(null)}
+            style={{ position: "absolute", top: 16, right: 20, background: "none", border: "none", color: "rgba(255,255,255,0.5)", fontSize: 22, cursor: "pointer" }}>✕</button>
+        </div>
+      )}
+    </>
+  );
+}
+
 function PropertyDetail({ prop, setDetailProp, setPage }) {
   const [tab, setTab] = useState("overview");
   if (!prop) return null;
+
+  const propImages = (prop.files || []).filter(f => f.type === "image");
+  const propPdfs   = (prop.files || []).filter(f => f.type === "pdf");
+  const propLinks  = prop.links || [];
+  const hasPhotos  = propImages.length > 0;
+  const hasPdfs    = propPdfs.length > 0;
 
   return (
     <div style={{ paddingTop:64, minHeight:"100vh", background:T.offWhite }}>
@@ -551,10 +627,11 @@ function PropertyDetail({ prop, setDetailProp, setPage }) {
 
       {/* Tabs */}
       <div style={{ background:"#fff", borderBottom:`1px solid ${T.border}`, padding:"0 1.5rem", display:"flex", gap:0 }}>
-        {["overview","map","contact"].map(t=>(
+        {["overview", ...(hasPhotos ? ["photos"] : []), "map", "contact"].map(t=>(
           <button key={t} onClick={()=>setTab(t)}
-            style={{ padding:"14px 24px", borderBottom:`2px solid ${tab===t?T.gold:"transparent"}`, background:"none", border:"none", borderBottom:`2px solid ${tab===t?T.gold:"transparent"}`, fontSize:13, color: tab===t?T.navy:T.textMuted, cursor:"pointer", fontWeight: tab===t?500:400, transition:"all 0.2s", fontFamily:"inherit", textTransform:"capitalize" }}>
+            style={{ padding:"14px 24px", background:"none", border:"none", borderBottom:`2px solid ${tab===t?T.gold:"transparent"}`, fontSize:13, color: tab===t?T.navy:T.textMuted, cursor:"pointer", fontWeight: tab===t?500:400, transition:"all 0.2s", fontFamily:"inherit", textTransform:"capitalize", display:"flex", alignItems:"center", gap:6 }}>
             {t}
+            {t === "photos" && <span style={{ fontSize:11, background: tab===t?T.navy:T.border, color: tab===t?"#fff":T.textMuted, borderRadius:99, padding:"1px 7px", fontWeight:500 }}>{propImages.length}</span>}
           </button>
         ))}
       </div>
@@ -576,20 +653,59 @@ function PropertyDetail({ prop, setDetailProp, setPage }) {
                   ))}
                 </div>
               </div>
-              {prop.floorPlan && (
-                <div style={{ marginTop:"1.5rem", padding:"1rem 1.25rem", border:`1px dashed ${T.border}`, borderRadius:8, display:"flex", alignItems:"center", gap:12 }}>
-                  <svg style={{ width:28, height:28, color:T.navy, flexShrink:0 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="3" y="3" width="18" height="18" rx="1"/><path d="M3 9h18M9 9v12"/></svg>
-                  <div>
-                    <p style={{ fontSize:13, fontWeight:500, color:T.navy }}>Floor plan available</p>
-                    <p style={{ fontSize:12, color:T.textLight }}>PDF download upon request</p>
+              {(hasPdfs || prop.floorPlan) && (
+                <div style={{ marginTop:"1.5rem" }}>
+                  <p style={{ fontSize:12, fontWeight:500, color:T.navy, marginBottom:10, textTransform:"uppercase", letterSpacing:"0.08em" }}>Documents</p>
+                  <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+                    {hasPdfs ? propPdfs.map(pdf => (
+                      <div key={pdf.url} style={{ padding:"0.875rem 1.1rem", border:`1px solid ${T.border}`, borderRadius:8, display:"flex", alignItems:"center", gap:12, background:"#fff" }}>
+                        {/* PDF icon */}
+                        <div style={{ width:34, height:34, borderRadius:5, background:"#fee2e2", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+                          <svg viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2" width={16} height={16}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+                        </div>
+                        <div style={{ flex:1, minWidth:0 }}>
+                          <p style={{ fontSize:13, fontWeight:500, color:T.navy, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{pdf.name}</p>
+                          <p style={{ fontSize:11, color:T.textMuted }}>PDF · Click to download</p>
+                        </div>
+                        <a href={pdf.url} download={pdf.name} target="_blank" rel="noopener noreferrer"
+                          style={{ background:T.navy, color:"#fff", border:"none", borderRadius:5, padding:"7px 14px", fontSize:12, fontWeight:500, cursor:"pointer", fontFamily:"inherit", textDecoration:"none", display:"flex", alignItems:"center", gap:5, flexShrink:0 }}>
+                          <svg viewBox="0 0 20 20" fill="currentColor" width={13} height={13}><path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd"/></svg>
+                          Download
+                        </a>
+                      </div>
+                    )) : (
+                      <div style={{ padding:"1rem 1.25rem", border:`1px dashed ${T.border}`, borderRadius:8, display:"flex", alignItems:"center", gap:12 }}>
+                        <svg style={{ width:28, height:28, color:T.navy, flexShrink:0 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="3" y="3" width="18" height="18" rx="1"/><path d="M3 9h18M9 9v12"/></svg>
+                        <div>
+                          <p style={{ fontSize:13, fontWeight:500, color:T.navy }}>Floor plan available</p>
+                          <p style={{ fontSize:12, color:T.textMuted }}>PDF available upon request</p>
+                        </div>
+                        <BtnSm variant="outline" style={{ marginLeft:"auto" }} onClick={()=>document.getElementById("contact")?.scrollIntoView({behavior:"smooth"})}>Request PDF</BtnSm>
+                      </div>
+                    )}
                   </div>
-                  <BtnSm variant="outline" style={{ marginLeft:"auto" }} onClick={()=>document.getElementById("contact")?.scrollIntoView({behavior:"smooth"})}>Request PDF</BtnSm>
                 </div>
               )}
+            {propLinks.length > 0 && (
+              <div style={{ marginTop:"1.5rem" }}>
+                <p style={{ fontSize:12, fontWeight:500, color:T.navy, marginBottom:10, textTransform:"uppercase", letterSpacing:"0.08em" }}>Links & resources</p>
+                <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
+                  {propLinks.map((l, i) => (
+                    <a key={i} href={l.url} target="_blank" rel="noopener noreferrer"
+                      style={{ display:"inline-flex", alignItems:"center", gap:7, background:T.offWhite, border:`1px solid ${T.border}`, borderRadius:5, padding:"8px 16px", fontSize:13, color:T.navy, textDecoration:"none", fontWeight:500, transition:"all 0.2s" }}
+                      onMouseEnter={e => { e.currentTarget.style.background = T.navy; e.currentTarget.style.color = T.goldLight; }}
+                      onMouseLeave={e => { e.currentTarget.style.background = T.offWhite; e.currentTarget.style.color = T.navy; }}>
+                      <svg viewBox="0 0 20 20" fill="currentColor" width={13} height={13}><path fillRule="evenodd" d="M12.586 4.586a2 2 0 112.828 2.828l-3 3a2 2 0 01-2.828 0 1 1 0 00-1.414 1.414 4 4 0 005.656 0l3-3a4 4 0 00-5.656-5.656l-1.5 1.5a1 1 0 101.414 1.414l1.5-1.5zm-5 5a2 2 0 012.828 0 1 1 0 101.414-1.414 4 4 0 00-5.656 0l-3 3a4 4 0 105.656 5.656l1.5-1.5a1 1 0 10-1.414-1.414l-1.5 1.5a2 2 0 11-2.828-2.828l3-3z" clipRule="evenodd"/></svg>
+                      {l.label} ↗
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
             </div>
             <div>
               <h3 style={{ fontFamily:"'Playfair Display',serif", fontSize:22, color:T.navy, marginBottom:"1rem" }}>Location</h3>
-              <MapEmbed lat={prop.mapLat} lng={prop.mapLng} name={prop.name} />
+              <MapEmbed lat={prop.mapLat} lng={prop.mapLng} address={prop.address} name={prop.name} />
               <div style={{ marginTop:"1rem", padding:"0.875rem 1rem", background:"#fff", border:`1px solid ${T.border}`, borderRadius:6, display:"flex", alignItems:"center", gap:10 }}>
                 <svg style={{ width:18, height:18, color:T.gold, flexShrink:0 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
                 <p style={{ fontSize:13, color:T.textMuted }}>{prop.address}</p>
@@ -598,10 +714,20 @@ function PropertyDetail({ prop, setDetailProp, setPage }) {
           </div>
         )}
 
+        {tab==="photos" && (
+          <div>
+            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:"1.5rem", flexWrap:"wrap", gap:10 }}>
+              <h3 style={{ fontFamily:"'Playfair Display',serif", fontSize:22, color:T.navy }}>Photo collection</h3>
+              <p style={{ fontSize:13, color:T.textMuted }}>{propImages.length} photo{propImages.length !== 1 ? "s" : ""} · Click any image to expand</p>
+            </div>
+            <PhotoGallery files={prop.files} />
+          </div>
+        )}
+
         {tab==="map" && (
           <div>
             <h3 style={{ fontFamily:"'Playfair Display',serif", fontSize:22, color:T.navy, marginBottom:"1.5rem" }}>Property location</h3>
-            <MapEmbed lat={prop.mapLat} lng={prop.mapLng} name={prop.name} />
+            <MapEmbed lat={prop.mapLat} lng={prop.mapLng} address={prop.address} name={prop.name} />
             <div style={{ marginTop:"1.5rem", display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(200px,1fr))", gap:12 }}>
               <div style={{ background:"#fff", border:`1px solid ${T.border}`, borderRadius:6, padding:"1rem 1.2rem" }}>
                 <p style={{ fontSize:11, color:T.textLight, textTransform:"uppercase", letterSpacing:"0.1em", marginBottom:4 }}>Full address</p>
@@ -619,14 +745,14 @@ function PropertyDetail({ prop, setDetailProp, setPage }) {
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"3rem", alignItems:"start" }}>
             <div>
               <h3 style={{ fontFamily:"'Playfair Display',serif", fontSize:22, color:T.navy, marginBottom:"1rem" }}>Inquire about this property</h3>
-              <p style={{ fontSize:14, color:T.textMuted, lineHeight:1.75, marginBottom:"1.5rem" }}>Contact Liz Lancaster directly for leasing rates, availability, and to schedule a site tour.</p>
+              <p style={{ fontSize:14, color:T.textMuted, lineHeight:1.75, marginBottom:"1.5rem" }}>Contact Management directly for leasing rates, availability, and to schedule a site tour.</p>
               <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
-                {[["Phone","(713) 426-5000"],["Toll free","(800) 216-9013"],["Leasing contact","Liz Lancaster"],["Office","6925 Portwest Dr, Suite 130, Houston TX 77024"]].map(([l,v])=>(
+                {[["Phone","(713) 426-5000"],["Office","6925 Portwest Dr, Suite 130, Houston TX 77024"]].map(([l,v])=>(
                   <div key={l}><p style={{ fontSize:11, color:T.textLight, textTransform:"uppercase", letterSpacing:"0.1em", marginBottom:2 }}>{l}</p><p style={{ fontSize:14, color:T.navy }}>{v}</p></div>
                 ))}
               </div>
             </div>
-            <ContactForm propertyName={prop.name} />
+            <ContactForm propertyName={prop.name} onLight />
           </div>
         )}
       </div>
@@ -678,60 +804,47 @@ function About() {
           </div>
         </div>
       </div>
+
+      {/* City market cards */}
+      <div style={{ marginTop:"4rem" }}>
+        <SectionTag>Our Markets</SectionTag>
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:16, marginTop:"1.25rem" }}>
+          {[
+            { city:"Houston", img:houstonImg, desc:"Serving commercial and industrial professionals across the Houston metropolitan area for over 40 years." },
+            { city:"Austin", img:austinImg, desc:"Expanding real estate services for Austin's growing community of business and professional tenants." },
+            { city:"Dallas", img:dallasImg, desc:"Commercial real estate services for professionals and firms across the Dallas–Fort Worth metroplex." },
+          ].map(c => (
+            <div key={c.city} style={{ position:"relative", height:220, borderRadius:8, overflow:"hidden" }}>
+              <img src={c.img} alt={c.city} style={{ width:"100%", height:"100%", objectFit:"cover", display:"block" }} />
+              <div style={{ position:"absolute", inset:0, background:"linear-gradient(to top, rgba(11,37,64,0.88) 0%, rgba(11,37,64,0.18) 60%)" }} />
+              <div style={{ position:"absolute", bottom:0, left:0, right:0, padding:"1.25rem" }}>
+                <p style={{ fontFamily:"'Playfair Display',serif", fontSize:20, color:"#fff", fontWeight:500, marginBottom:4 }}>{c.city}</p>
+                <p style={{ fontSize:12, color:"rgba(255,255,255,0.72)", lineHeight:1.55 }}>{c.desc}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
     </section>
   );
 }
 
-// ─────────────────────────────────────────────
-//  PROCESS
-// ─────────────────────────────────────────────
-function Process() {
-  const [activeTab, setActiveTab] = useState("bts");
-  return (
-    <section id="process" style={{ background:T.offWhite, padding:"6rem 1.5rem" }}>
-      <SectionTag>How we work</SectionTag>
-      <SectionTitle>A straightforward process<br/>for each engagement.</SectionTitle>
-      <p style={{ color:T.textMuted, fontSize:15, lineHeight:1.75, maxWidth:560, marginBottom:"2.5rem", fontWeight:300 }}>
-        Whether you're a prospective tenant, an investor, or exploring a build-to-suit — here's what working with Billipp looks like.
-      </p>
-      {/* Tabs */}
-      <div style={{ display:"flex", gap:4, background:T.warmGray, borderRadius:4, padding:4, width:"fit-content", marginBottom:"2.5rem" }}>
-        {Object.entries(PROCESS_TABS).map(([k,v])=>(
-          <button key={k} onClick={()=>setActiveTab(k)}
-            style={{ padding:"8px 20px", borderRadius:4, border:"none", fontSize:13, cursor:"pointer", background: activeTab===k?"#fff":"transparent", color: activeTab===k?T.navy:T.textMuted, fontWeight: activeTab===k?500:400, boxShadow: activeTab===k?"0 1px 4px rgba(0,0,0,0.08)":"none", transition:"all 0.2s", fontFamily:"inherit" }}>
-            {v.label}
-          </button>
-        ))}
-      </div>
-      <div style={{ display:"grid", gridTemplateColumns:`repeat(${PROCESS_TABS[activeTab].steps.length},1fr)`, gap:0, position:"relative" }}>
-        {PROCESS_TABS[activeTab].steps.map((s,i)=>(
-          <div key={s.n} style={{ padding:"1.5rem", position:"relative" }}>
-            <div style={{ fontFamily:"'Playfair Display',serif", fontSize:40, color:T.warmGray, fontWeight:500, lineHeight:1, marginBottom:8 }}>{s.n}</div>
-            <p style={{ fontSize:14, fontWeight:500, color:T.navy, marginBottom:4 }}>{s.title}</p>
-            <p style={{ fontSize:12, color:T.textMuted, lineHeight:1.6 }}>{s.desc}</p>
-            {i < PROCESS_TABS[activeTab].steps.length-1 && (
-              <span style={{ position:"absolute", right:-10, top:"40%", color:T.gold, fontSize:20, fontWeight:300 }}>→</span>
-            )}
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
 
 // ─────────────────────────────────────────────
 //  CONTACT FORM (reusable)
 // ─────────────────────────────────────────────
-function ContactForm({ propertyName }) {
+function ContactForm({ propertyName, onLight = false }) {
   const [form, setForm] = useState({
     first: "", last: "", company: "", email: "",
     topic: propertyName ? "Leasing available space" : "",
     message: propertyName ? `I'm interested in ${propertyName}.` : "",
+    _honey: "",  // honeypot — must stay empty
   });
   const [status, setStatus] = useState("idle"); // "idle" | "sending" | "sent" | "error"
+  const lastSent = useRef(0);
 
-  const inputStyle = { background:"rgba(255,255,255,0.06)", border:`1px solid rgba(255,255,255,0.12)`, borderRadius:4, padding:"10px 14px", color:"rgba(255,255,255,0.85)", fontSize:14, fontWeight:300, outline:"none", width:"100%", fontFamily:"inherit" };
-  const labelStyle = { fontSize:11, color:"rgba(255,255,255,0.4)", letterSpacing:"0.08em", textTransform:"uppercase" };
+  const inputStyle = { background:"rgba(255,255,255,0.92)", border:`1px solid ${onLight ? T.border : "rgba(255,255,255,0.25)"}`, borderRadius:4, padding:"10px 14px", color:"#1a1a1a", fontSize:14, fontWeight:300, outline:"none", width:"100%", fontFamily:"inherit" };
+  const labelStyle = { fontSize:11, color: onLight ? T.textMuted : "rgba(255,255,255,0.6)", letterSpacing:"0.08em", textTransform:"uppercase" };
 
   const field = (label, key, type="text", placeholder="") => (
     <div style={{ display:"flex", flexDirection:"column", gap:5 }}>
@@ -742,6 +855,14 @@ function ContactForm({ propertyName }) {
   );
 
   async function handleSend() {
+    // Honeypot — bots fill hidden fields, humans don't
+    if (form._honey) return;
+    // Rate limit — one submission per 60 seconds
+    const now = Date.now();
+    if (now - lastSent.current < 60_000) {
+      alert("Please wait a moment before sending another message.");
+      return;
+    }
     if (!form.first || !form.email) {
       alert("Please fill in your name and email before sending.");
       return;
@@ -762,9 +883,9 @@ function ContactForm({ propertyName }) {
         },
         EJS_PUBLIC
       );
+      lastSent.current = Date.now();
       setStatus("sent");
-    } catch (err) {
-      console.error("EmailJS error:", err);
+    } catch {
       setStatus("error");
     }
   }
@@ -794,7 +915,7 @@ function ContactForm({ propertyName }) {
       <div style={{ display:"flex", flexDirection:"column", gap:5 }}>
         <label style={labelStyle}>I'm interested in</label>
         <select value={form.topic} onChange={e=>setForm({...form,topic:e.target.value})}
-          style={{ ...inputStyle, fontWeight:400, background:T.navyMid, color:"rgba(255,255,255,0.85)" }}>
+          style={{ ...inputStyle, fontWeight:400, background:"rgba(255,255,255,0.92)", color:"#1a1a1a" }}>
           <option value="" style={{ background:T.navyMid, color:"rgba(255,255,255,0.7)" }}>Select a topic</option>
           {["Leasing available space","Build-to-suit (leased)","Build-to-suit (purchased)","Investment / acquisition","Joint venture / partnership","Sale-leaseback","General inquiry"].map(o=><option key={o} style={{ background:T.navyMid, color:"#fff" }}>{o}</option>)}
         </select>
@@ -805,6 +926,9 @@ function ContactForm({ propertyName }) {
           style={{ ...inputStyle, resize:"vertical" }}
           placeholder="Tell us about your project, timeline, and space requirements…" />
       </div>
+      {/* Honeypot — hidden from real users, filled by bots */}
+      <input type="text" name="_honey" value={form._honey} onChange={e=>setForm({...form,_honey:e.target.value})}
+        tabIndex={-1} autoComplete="off" style={{ position:"absolute", left:"-9999px", opacity:0, height:0, width:0 }} />
       <BtnPrimary style={{ width:"100%", padding:13, fontSize:14, opacity: status==="sending"?0.7:1 }}
         onClick={handleSend}>
         {status === "sending" ? "Sending…" : "Send inquiry"}
@@ -826,7 +950,7 @@ function Contact() {
           <p style={{ color:"rgba(255,255,255,0.45)", fontSize:15, fontWeight:300, lineHeight:1.75, margin:"1.5rem 0 2.5rem", maxWidth:380 }}>
             Whether you're looking for space, exploring a build-to-suit, or want to discuss an investment — we respond to every inquiry directly.
           </p>
-          {[["Address","6925 Portwest Drive, Suite 130\nHouston, Texas 77024"],["Phone","(713) 426-5000"],["Leasing inquiries","Contact Liz Lancaster directly"]].map(([l,v])=>(
+          {[["Address","6925 Portwest Drive, Suite 130\nHouston, Texas 77024"],["Phone","(713) 426-5000"],["Inquiries","info@billipp.com"]].map(([l,v])=>(
             <div key={l} style={{ marginBottom:"1.5rem" }}>
               <p style={{ fontSize:11, letterSpacing:"0.12em", textTransform:"uppercase", color:"rgba(255,255,255,0.35)", marginBottom:4 }}>{l}</p>
               <p style={{ fontSize:15, color:"rgba(255,255,255,0.85)", fontWeight:300, whiteSpace:"pre-line" }}>{v}</p>
@@ -845,7 +969,7 @@ function Contact() {
 function Footer({ setPage }) {
   return (
     <footer style={{ background:"#080f18", padding:"1.75rem 1.5rem", display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:"1rem", borderTop:`1px solid rgba(200,169,110,0.15)` }}>
-      <p style={{ fontSize:12, color:"rgba(255,255,255,0.25)" }}>© 2025 J.A. Billipp Company · Houston, Texas · All rights reserved</p>
+      <p style={{ fontSize:12, color:"rgba(255,255,255,0.25)" }}>© 2026 J.A. Billipp Company · Houston, Texas · All rights reserved</p>
       <div style={{ display:"flex", gap:"1.5rem" }}>
         {[["Services","services"],["Portfolio","portfolio"],["About","about"],["Contact","contact"]].map(([l,a])=>(
           <button key={l} onClick={()=>document.getElementById(a)?.scrollIntoView({behavior:"smooth"})}
@@ -862,7 +986,7 @@ function Footer({ setPage }) {
 // ─────────────────────────────────────────────
 //  DIRECTORY / ABOUT PAGE
 // ─────────────────────────────────────────────
-function DirectoryPage({ setPage }) {
+function DirectoryPage({ setPage, companies }) {
   const [activeTeam, setActiveTeam] = useState(0);
   return (
     <div style={{ paddingTop:64, background:T.offWhite, minHeight:"100vh" }}>
@@ -875,7 +999,7 @@ function DirectoryPage({ setPage }) {
           A privately held Houston commercial real estate firm operating since 1980. We develop, acquire, and invest in commercial and industrial properties — owning everything we build.
         </p>
         <div style={{ display:"flex", gap:"2.5rem", marginTop:"2.5rem", flexWrap:"wrap" }}>
-          {[["40+","Years in business"],["32+","Completed projects"],["3M+ SF","Developed & managed"],["10+","Fortune 500 tenants"]].map(([n,l])=>(
+          {[["45+","Years in business"],["32+","Completed projects"],["3M+ SF","Developed & managed"],["10+","Fortune 500 tenants"]].map(([n,l])=>(
             <div key={l} style={{ borderRight:`1px solid rgba(255,255,255,0.1)`, paddingRight:"2.5rem" }}>
               <div style={{ fontFamily:"'Playfair Display',serif", fontSize:30, color:"#fff" }}>{n}</div>
               <div style={{ fontSize:11, color:"rgba(255,255,255,0.4)", textTransform:"uppercase", letterSpacing:"0.1em" }}>{l}</div>
@@ -938,12 +1062,14 @@ function DirectoryPage({ setPage }) {
           <SectionTag>Client & tenant directory</SectionTag>
           <SectionTitle>Companies that have trusted Billipp.</SectionTitle>
           <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(180px,1fr))", gap:10, marginTop:"2rem" }}>
-            {CLIENTS.map(c=>(
-              <div key={c} style={{ background:"#fff", border:`1px solid ${T.border}`, borderRadius:6, padding:"1rem 1.1rem", display:"flex", alignItems:"center", gap:10 }}>
-                <div style={{ width:32, height:32, borderRadius:5, background:T.navy, display:"flex", alignItems:"center", justifyContent:"center", fontSize:10, fontWeight:700, color:T.gold, flexShrink:0, letterSpacing:"0.05em" }}>
-                  {c.split(" ").map(w=>w[0]).join("").slice(0,2)}
+            {(companies && companies.length ? companies.filter(c=>c.show_directory) : FALLBACK_CLIENTS.map(n=>({ name:n }))).map(c=>(
+              <div key={c.name} style={{ background:"#fff", border:`1px solid ${T.border}`, borderRadius:6, padding:"1rem 1.1rem", display:"flex", alignItems:"center", gap:10 }}>
+                <div style={{ width:32, height:32, borderRadius:5, background:T.navy, display:"flex", alignItems:"center", justifyContent:"center", fontSize:10, fontWeight:700, color:T.gold, flexShrink:0, letterSpacing:"0.05em", overflow:"hidden" }}>
+                  {c.logo_url
+                    ? <img src={c.logo_url} alt={c.name} style={{ width:24, height:24, objectFit:"contain" }} />
+                    : (c.abbr || c.name.split(" ").map(w=>w[0]).join("").slice(0,2))}
                 </div>
-                <span style={{ fontSize:13, color:T.textMuted, lineHeight:1.3 }}>{c}</span>
+                <span style={{ fontSize:13, color:T.textMuted, lineHeight:1.3 }}>{c.name}</span>
               </div>
             ))}
           </div>
@@ -974,15 +1100,14 @@ function DirectoryPage({ setPage }) {
 // ─────────────────────────────────────────────
 //  HOME PAGE
 // ─────────────────────────────────────────────
-function HomePage({ setPage, setDetailProp }) {
+function HomePage({ setPage, setDetailProp, properties, companies }) {
   return (
     <>
       <Hero setPage={setPage} />
-      <LogoCarousel />
+      <LogoCarousel logos={companies.filter(c=>c.show_carousel)} />
       <Services />
-      <Portfolio setDetailProp={setDetailProp} />
+      <Portfolio setDetailProp={setDetailProp} properties={properties} />
       <About />
-      <Process />
       <Contact />
       <Footer setPage={setPage} />
     </>
@@ -993,24 +1118,64 @@ function HomePage({ setPage, setDetailProp }) {
 //  ROOT APP
 // ─────────────────────────────────────────────
 export default function App() {
-  const [page, setPage] = useState("home"); // "home" | "about" | "directory" | "detail"
+  const [page, setPage]           = useState("home");
   const [detailProp, setDetailProp] = useState(null);
+  const [properties, setProperties] = useState(FALLBACK_PROPERTIES);
+  const [companies, setCompanies]   = useState([]);
+  const [adminSession, setAdminSession] = useState(null);
+  const [authChecked, setAuthChecked]   = useState(false);
+
+  // Check for /admin in URL hash to enter admin mode
+  const isAdminRoute = window.location.hash === "#/admin" || window.location.pathname === "/admin";
+
+  // Restore existing session on mount
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      setAdminSession(data.session);
+      setAuthChecked(true);
+    });
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setAdminSession(session);
+    });
+    return () => listener.subscription.unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    fetchProperties().then(setProperties);
+    supabase.from("companies").select("*").order("sort_order").order("name")
+      .then(({ data }) => { if (data && data.length) setCompanies(data); });
+  }, []);
 
   function handleSetDetailProp(p) {
     setDetailProp(p);
     setPage("detail");
-    window.scrollTo(0,0);
+    window.scrollTo(0, 0);
   }
 
+  async function handleSignOut() {
+    await supabase.auth.signOut();
+    setAdminSession(null);
+    window.location.hash = "";
+  }
+
+  // ── Admin portal route ────────────────────────────────────────────────────
+  if (isAdminRoute) {
+    if (!authChecked) return null; // wait for session check
+    if (!adminSession) return <AdminLogin onLogin={setAdminSession} />;
+    return <AdminPortal session={adminSession} onSignOut={handleSignOut} />;
+  }
+
+  // ── Public site ───────────────────────────────────────────────────────────
   return (
     <>
       <style>{GF}{css}</style>
-      <Nav page={page} setPage={(p)=>{ setPage(p); if(p==="home") setDetailProp(null); }} />
+      <Nav page={page} setPage={(p) => { setPage(p); if (p === "home") setDetailProp(null); }} />
       <main>
-        {page === "home" && <HomePage setPage={setPage} setDetailProp={handleSetDetailProp} />}
-        {page === "directory" && <DirectoryPage setPage={setPage} />}
+        {page === "home" && <HomePage setPage={setPage} setDetailProp={handleSetDetailProp} properties={properties} companies={companies} />}
+        {page === "directory" && <DirectoryPage setPage={setPage} companies={companies} />}
+        {page === "portfolio-map" && <PortfolioMapPage properties={properties} setDetailProp={handleSetDetailProp} />}
         {page === "detail" && detailProp && (
-          <PropertyDetail prop={detailProp} setDetailProp={(p)=>{ if(p){setDetailProp(p);}else{setPage("home");setDetailProp(null);window.scrollTo(0,0);}}} setPage={setPage} />
+          <PropertyDetail prop={detailProp} setDetailProp={(p) => { if (p) { setDetailProp(p); } else { setPage("home"); setDetailProp(null); window.scrollTo(0, 0); } }} setPage={setPage} />
         )}
       </main>
     </>
