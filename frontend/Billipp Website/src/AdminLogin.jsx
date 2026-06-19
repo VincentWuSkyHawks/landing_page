@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { supabase } from "./supabaseClient";
+import billippLogo from "./assets/logo.png";
 
 const T = {
   navy: "#0b2540", navyMid: "#163656", navyLight: "#1e4a73",
@@ -43,9 +44,9 @@ export default function AdminLogin({ onLogin }) {
       }}>
         {/* Logo */}
         <div style={{ textAlign: "center", marginBottom: "2.5rem" }}>
-          <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 26, color: T.goldLight }}>Billipp</div>
-          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", letterSpacing: "0.16em", textTransform: "uppercase", marginTop: 2 }}>Admin Portal</div>
-          <div style={{ width: 40, height: 1, background: T.gold, margin: "1rem auto 0" }} />
+          <img src={billippLogo} alt="Billipp Company" style={{ height: 48, width: "auto", objectFit: "contain", marginBottom: 10 }} />
+          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", letterSpacing: "0.16em", textTransform: "uppercase" }}>Admin Portal</div>
+          <div style={{ width: 40, height: 1, background: T.gold, margin: "0.75rem auto 0" }} />
         </div>
 
         <form onSubmit={handleLogin} style={{ display: "flex", flexDirection: "column", gap: 16 }}>

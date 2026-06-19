@@ -17,20 +17,21 @@ import dallasImg from "./assets/dallas.webp";
 import spaceCenterImg from "./assets/Billip Space Center2.jpg";
 import lockheedLogo from "./assets/lockheed.png";
 import skyhawkLogo from "./assets/skyhawk_white (002).png";
+import billippLogo from "./assets/logo.png";
 
 // ─────────────────────────────────────────────
 //  DATA
 // ─────────────────────────────────────────────
 
 const TEAM = [
-  { initials: "JB", name: "Andrew Billipp", role: "Board Executive", bio: "Founder of J.A. Billipp Company with over 40 years developing and investing in Houston commercial real estate. Has led every major project in the firm's portfolio.", color: T.navy },
-  { initials: "JB", name: "Peter Billipp", role: "President", bio: "Founder of J.A. Billipp Company with over 40 years developing and investing in Houston commercial real estate. Has led every major project in the firm's portfolio.", color: T.navy },
-  { initials: "JB", name: "Margaret Centra", role: "Board Executive", bio: "Founder of J.A. Billipp Company with over 40 years developing and investing in Houston commercial real estate. Has led every major project in the firm's portfolio.", color: T.navy },
+  { initials: "AB", name: "Andrew Billipp", role: "Board Executive", bio: ".", color: T.navy },
+  { initials: "PB", name: "Peter Billipp", role: "President", bio: ".", color: T.navy },
+  { initials: "MC", name: "Margaret Centra", role: "Property Manager", bio: ".", color: T.navy },
  
-  { initials: "LL", name: "Liz Lancaster", role: "Leasing & Acquisitions", bio: "Primary point of contact for all leasing and property acquisition inquiries. Deep knowledge of available properties across the Houston metro market.", color: T.navyMid },
+  { initials: "LL", name: "Liz Lancaster", role: "Leasing & Acquisitions", bio: ".", color: T.navyMid },
   
-  { initials: "PM", name: "Lori Hart", role: "Development Team", bio: "Oversees all ground-up development and build-to-suit projects from site selection through delivery, working with Houston's most trusted contractors.", color: T.navyLight },
-  { initials: "JB", name: "Matt", role: "__", bio: "Founder of J.A. Billipp Company with over 40 years developing and investing in Houston commercial real estate. Has led every major project in the firm's portfolio.", color: T.navy },
+  { initials: "LH", name: "Lori Hart", role: "Development Team", bio: ".", color: T.navyLight },
+  { initials: "MW", name: "Mark Witte", role: "Engineering Manager", bio: ".", color: T.navy },
 
 ];
 
@@ -228,9 +229,8 @@ function Nav({ page, setPage }) {
   return (
     <nav style={{ position:"fixed", top:0, left:0, right:0, zIndex:200, height:64, background: scrolled?"rgba(11,37,64,0.97)":"rgba(11,37,64,0.97)", backdropFilter:"blur(8px)", display:"flex", alignItems:"center", justifyContent:"space-between", padding:"0 1.5rem", borderBottom:`1px solid rgba(200,169,110,0.2)`, transition:"background 0.3s" }}>
       <div style={{ display:"flex", alignItems:"center", gap:16 }}>
-        <button onClick={()=>{setPage("home");window.scrollTo(0,0)}} style={{ background:"none", border:"none", cursor:"pointer", textAlign:"left", padding:0 }}>
-          <div style={{ fontFamily:"'Playfair Display',serif", fontSize:24, color:T.goldLight, letterSpacing:"0.02em" }}>Billipp</div>
-          <div style={{ color:"rgba(255,255,255,0.45)", fontSize:18, fontWeight:300, letterSpacing:"0.12em", textTransform:"uppercase", marginTop:-2 }}>Company</div>
+        <button onClick={()=>{setPage("home");window.scrollTo(0,0)}} style={{ background:"none", border:"none", cursor:"pointer", padding:0 }}>
+          <img src={billippLogo} alt="Billipp Company" style={{ height:40, width:"auto", objectFit:"contain" }} />
         </button>
         <div style={{ width:1, height:36, background:"rgba(200,169,110,0.2)" }} />
         <img src={skyhawkLogo} alt="Skyhawk Partners" style={{ height:30, width:"auto", objectFit:"contain", opacity:0.8 }} />
@@ -789,7 +789,7 @@ function About() {
           <SectionTitle>Owner-operated.<br/>Houston-rooted.</SectionTitle>
           <div style={{ width:48, height:2, background:T.gold, marginBottom:"2rem" }} />
           <p style={{ color:T.textMuted, fontSize:15, lineHeight:1.75, fontWeight:300, marginBottom:"1.5rem" }}>
-            J.A. Billipp Company is a privately held commercial and industrial real estate firm that selectively develops, acquires, and invests in properties across the Houston metropolitan area. Unlike third-party managers, we own what we build.
+            Billipp Company is a privately held commercial and industrial real estate firm that selectively develops, acquires, and invests in properties across the Houston metropolitan area. Unlike third-party managers, we own what we build.
           </p>
           <p style={{ color:T.textMuted, fontSize:15, lineHeight:1.75, fontWeight:300, marginBottom:"2rem" }}>
             Our relationships with tenants like Lockheed Martin, Office Depot, and CooperVision span decades — not because of contracts, but because of how we operate.
@@ -917,7 +917,7 @@ function ContactForm({ propertyName, onLight = false }) {
         <select value={form.topic} onChange={e=>setForm({...form,topic:e.target.value})}
           style={{ ...inputStyle, fontWeight:400, background:"rgba(255,255,255,0.92)", color:"#1a1a1a" }}>
           <option value="" style={{ background:T.navyMid, color:"rgba(255,255,255,0.7)" }}>Select a topic</option>
-          {["Leasing available space","Build-to-suit (leased)","Build-to-suit (purchased)","Investment / acquisition","Joint venture / partnership","Sale-leaseback","General inquiry"].map(o=><option key={o} style={{ background:T.navyMid, color:"#fff" }}>{o}</option>)}
+          {["Available Space","Build-to-Suit (Lease)","Design-Build(Own)","Sale-Leaseback","Joint venture(partnership)","Investment/Acquisition","General inquiry"].map(o=><option key={o} style={{ background:T.navyMid, color:"#fff" }}>{o}</option>)}
         </select>
       </div>
       <div style={{ display:"flex", flexDirection:"column", gap:5 }}>
@@ -969,7 +969,7 @@ function Contact() {
 function Footer({ setPage }) {
   return (
     <footer style={{ background:"#080f18", padding:"1.75rem 1.5rem", display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:"1rem", borderTop:`1px solid rgba(200,169,110,0.15)` }}>
-      <p style={{ fontSize:12, color:"rgba(255,255,255,0.25)" }}>© 2026 J.A. Billipp Company · Houston, Texas · All rights reserved</p>
+      <p style={{ fontSize:12, color:"rgba(255,255,255,0.25)" }}>© 2026 Billipp Company · Houston, Texas · All rights reserved</p>
       <div style={{ display:"flex", gap:"1.5rem" }}>
         {[["Services","services"],["Portfolio","portfolio"],["About","about"],["Contact","contact"]].map(([l,a])=>(
           <button key={l} onClick={()=>document.getElementById(a)?.scrollIntoView({behavior:"smooth"})}
@@ -994,7 +994,7 @@ function DirectoryPage({ setPage, companies }) {
       {/* Page hero */}
       <div style={{ background:T.navy, padding:"4rem 1.5rem 3rem" }}>
         <SectionTag>Company</SectionTag>
-        <SectionTitle light>About J.A. Billipp Company</SectionTitle>
+        <SectionTitle light>About Billipp Company</SectionTitle>
         <p style={{ color:"rgba(255,255,255,0.5)", fontSize:15, fontWeight:300, lineHeight:1.75, maxWidth:560 }}>
           A privately held Houston commercial real estate firm operating since 1980. We develop, acquire, and invest in commercial and industrial properties — owning everything we build.
         </p>

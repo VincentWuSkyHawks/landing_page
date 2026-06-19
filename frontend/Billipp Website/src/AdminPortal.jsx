@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "./supabaseClient";
+import billippLogo from "./assets/logo.png";
 
 const T = {
   navy: "#0b2540", navyMid: "#163656", navyLight: "#1e4a73",
@@ -809,7 +810,7 @@ export default function AdminPortal({ session, onSignOut }) {
       {/* Top bar */}
       <div style={{ background: T.navy, padding: "0 1.5rem", height: 56, display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid rgba(200,169,110,0.2)", position: "sticky", top: 0, zIndex: 100 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <span style={{ fontFamily: "'Playfair Display',serif", fontSize: 18, color: T.goldLight }}>Billipp</span>
+          <img src={billippLogo} alt="Billipp Company" style={{ height: 32, width: "auto", objectFit: "contain" }} />
           <span style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", letterSpacing: "0.1em", textTransform: "uppercase" }}>Admin</span>
           <span style={{ color: "rgba(255,255,255,0.2)", margin: "0 4px" }}>|</span>
           <span style={{ fontSize: 12, color: "rgba(255,255,255,0.5)" }}>{session?.user?.email}</span>
